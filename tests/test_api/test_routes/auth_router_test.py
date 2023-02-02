@@ -18,7 +18,8 @@ def get_register_data(init_client) -> dict:
     reg_data = {
         "username": "string",
         "email": "some@mail.com",
-        "password": "wwef3245gr"
+        "password": "wefergh32uhe3f",
+        "role": 3
     }
     response = init_client.post(
         "/api/v1/auth/signIn",
@@ -29,7 +30,7 @@ def get_register_data(init_client) -> dict:
     )
     if response.status_code == 404:
         reg_response = init_client.put(
-            "/api/v1/auth/signUp",
+            "/api/v1/create_start_user",
             json=reg_data
         )
         if reg_response.status_code != 201:
@@ -55,6 +56,7 @@ def get_register_data(init_client) -> dict:
 
 
 def register_user(init_client) -> dict:
+    admin_data = get_register_data(init_client)
     # reg new user
     user_name = generate_valid_username()
     password = generate_valid_password()
@@ -64,7 +66,13 @@ def register_user(init_client) -> dict:
         json=dict(
             username=user_name,
             email=f"{user_name}@mail.com",
-            password=password
+            password=password,
+            role=3
+        ),
+        cookies=dict(
+            access_token=admin_data["access_token"],
+            refresh_token=admin_data["refresh_token"],
+            session_id=admin_data["session_id"]
         )
     )
     assert response.status_code == 201
@@ -111,7 +119,17 @@ def test_signup_duplicate_uname():
 
         response = init_client.put(
             "/api/v1/auth/signUp",
-            json=user_data
+            json=dict(
+                username=user_data["username"],
+                email=f"{user_data['username']}@mail.com",
+                password=user_data["password"],
+                role=3
+            ),
+            cookies=dict(
+                access_token=user_data["access_token"],
+                refresh_token=user_data["refresh_token"],
+                session_id=user_data["session_id"]
+            )
         )
     assert response.status_code == 409
 
@@ -121,35 +139,22 @@ def test_signup_reg_user():
     user_name = generate_valid_username()
     password = generate_valid_password()
     with client as init_client:
+        admin_data = get_register_data(init_client)
         response = init_client.put(
             "/api/v1/auth/signUp",
             json=dict(
                 username=user_name,
                 email=f"{user_name}@mail.com",
-                password=password
+                password=password,
+                role=3
+            ),
+            cookies=dict(
+                access_token=admin_data["access_token"],
+                refresh_token=admin_data["refresh_token"],
+                session_id=admin_data["session_id"]
             )
         )
     assert response.status_code == 201
-
-
-def test_signup_ping_with_sign():
-    # test ping with signin
-    with client as init_client:
-        user_data = get_register_data(init_client)
-        response = init_client.put(
-            "/api/v1/auth/signUp",
-            json=dict(
-                username=user_data["username"],
-                email=user_data["email"],
-                password=user_data["password"]
-            ),
-            cookies=dict(
-                access_token=user_data["access_token"],
-                refresh_token=user_data["refresh_token"],
-                session_id=user_data["session_id"]
-            )
-        )
-    assert response.status_code == 403
 
 
 def test_signin_wrong_password():
