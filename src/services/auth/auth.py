@@ -26,7 +26,7 @@ class AuthApplicationService:
         self._current_user = current_user
         self._debug = debug
 
-    @auth(is_authenticated=False)
+    @auth(is_authenticated=True, roles=[UserRole.ADMIN])
     async def create_user(self, user: schemas.UserSignUp) -> schemas.User:
         """
         Создание нового пользователя
@@ -73,7 +73,7 @@ class AuthApplicationService:
         if user.role == UserRole.BANNED:
             raise AccessDenied("User is banned")
         # генерация и установка токенов
-        tokens = self._jwt.generate_tokens(user.id, user.username, user.role.value, user.state.value)
+        tokens = self._jwt.generate_tokens(user.id, user.username, user.role.value)
         self._jwt.set_jwt_cookie(response, tokens)
         await self._session.set_session_id(response, tokens.refresh_token)
         return user
@@ -91,7 +91,7 @@ class AuthApplicationService:
         if session_id:
             await self._session.delete_session_id(session_id, response)
 
-    @auth(is_authenticated=True)
+    @auth(is_authenticated=True, roles=[UserRole.ADMIN, UserRole.USER])
     async def refresh_tokens(self, request: Request, response: Response) -> None:
         """
         Обновление токенов
@@ -117,7 +117,7 @@ class AuthApplicationService:
         if user.role == UserRole.BANNED:
             raise AccessDenied("User is banned")
 
-        new_tokens = self._jwt.generate_tokens(user.id, user.username, user.role.value, user.state.value)
+        new_tokens = self._jwt.generate_tokens(user.id, user.username, user.role.value)
         self._jwt.set_jwt_cookie(response, new_tokens)
         # Для бесшовного обновления токенов: # TODO: возможно убрать отсюда
         request.cookies["access_token"] = new_tokens.access_token

@@ -58,14 +58,13 @@ class JWTManager:
         """
         return self._decode_jwt(token, self.JWT_REFRESH_SECRET_KEY)
 
-    def generate_access_token(self, id: int, username: str, role_value: int, state_value: int) -> str:
+    def generate_access_token(self, id: int, username: str, role_value: int) -> str:
         """
         Генерирует access-токен
         на основе payload:
         :param id: ид пользователя
         :param username: имя пользователя
         :param role_value: целочисленное значение роли
-        :param state_value: целочисленное значение состояния
         :return:
         """
         return self._generate_token(
@@ -74,17 +73,15 @@ class JWTManager:
             id=id,
             username=username,
             role_value=role_value,
-            state_value=state_value,
         )
 
-    def generate_refresh_token(self, id: int, username: str, role_value: int, state_value: int) -> str:
+    def generate_refresh_token(self, id: int, username: str, role_value: int) -> str:
         """
         Генерирует refresh-токен
         на основе payload:
         :param id: ид пользователя
         :param username: имя пользователя
         :param role_value: целочисленное значение роли
-        :param state_value: целочисленное значение состояния
         :return:
         """
         return self._generate_token(
@@ -93,21 +90,19 @@ class JWTManager:
             id=id,
             username=username,
             role_value=role_value,
-            state_value=state_value,
         )
 
-    def generate_tokens(self, id: int, username: str, role_value: int, state_value: int) -> schemas.Tokens:
+    def generate_tokens(self, id: int, username: str, role_value: int) -> schemas.Tokens:
         """
         Генерирует access- и refresh-токены
         :param id:
         :param username:
         :param role_value:
-        :param state_value:
         :return:
         """
         return schemas.Tokens(
-            access_token=self.generate_access_token(id, username, role_value, state_value),
-            refresh_token=self.generate_refresh_token(id, username, role_value, state_value)
+            access_token=self.generate_access_token(id, username, role_value),
+            refresh_token=self.generate_refresh_token(id, username, role_value)
         )
 
     def set_jwt_cookie(self, response: Response, tokens: schemas.Tokens) -> None:

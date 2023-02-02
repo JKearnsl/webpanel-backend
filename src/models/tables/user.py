@@ -4,7 +4,6 @@ from sqlalchemy.orm import relationship
 from src.db import Base, IntEnum
 
 from src.models.role import UserRole
-from src.models.state import UserStates
 
 
 class User(Base):
@@ -17,7 +16,6 @@ class User(Base):
     hashed_password = Column(String(255), nullable=False)
 
     role = Column(Enum(UserRole), default=UserRole.USER)
-    state = Column(IntEnum(UserStates), default=UserStates.ACTIVE)
 
     create_at = Column(DateTime(timezone=True), server_default=func.now())
     update_at = Column(DateTime(timezone=True), onupdate=func.now())

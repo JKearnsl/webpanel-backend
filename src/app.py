@@ -8,13 +8,12 @@ from fastapi.openapi.utils import get_openapi
 from pydantic import ValidationError
 
 from src.models import tables
-from src.db import create_psql_async_session, create_sqlite_async_session
+from src.db import create_sqlite_async_session
 from src.middleware import JWTMiddleware
 from src.config import load_ini_config
 from src.exceptions import APIError, handle_api_error, handle_404_error, handle_pydantic_error
 
 from src.router import reg_root_api_router
-from src.services.storage.s3 import S3Storage
 from src.utils import RedisClient, AiohttpClient
 
 config = load_ini_config('./config.ini')
@@ -37,22 +36,6 @@ app = FastAPI(
 )
 
 
-async def init_postgresql_db():
-    engine, session = create_psql_async_session(
-        username=config.DB.POSTGRESQL.USERNAME,
-        password=config.DB.POSTGRESQL.PASSWORD,
-        host=config.DB.POSTGRESQL.HOST,
-        port=config.DB.POSTGRESQL.PORT,
-        database=config.DB.POSTGRESQL.DATABASE,
-        echo=config.DEBUG,
-    )
-    app.state.db_session = session
-
-    async with engine.begin() as conn:
-        # await conn.run_sync(tables.Base.metadata.drop_all)
-        await conn.run_sync(tables.Base.metadata.create_all)
-
-
 async def init_sqlite_db():
     engine, session = create_sqlite_async_session(
         database='database.db',
@@ -73,39 +56,19 @@ async def redis_pool(db: int = 0):
     )
 
 
-def init_file_storage():
-    # s3 storage
-    app.state.file_storage = S3Storage(
-        bucket=config.DB.S3.BUCKET,
-        service_name=config.DB.S3.SERVICE_NAME,
-        endpoint_url=config.DB.S3.ENDPOINT_URL,
-        region_name=config.DB.S3.REGION_NAME,
-        aws_access_key_id=config.DB.S3.AWS_ACCESS_KEY_ID,
-        aws_secret_access_key=config.DB.S3.AWS_SECRET_ACCESS_KEY,
-    )
-
-
 @app.on_event("startup")
 async def on_startup():
     log.debug("Executing FastAPI startup event handler.")
-    if config.DB.POSTGRESQL:
-        await init_postgresql_db()
-    else:
-        await init_sqlite_db()
-    if config.DB.REDIS:
-        app.state.redis = RedisClient(await redis_pool())
-    if config.DB.S3:
-        init_file_storage()
+    await init_sqlite_db()
+    app.state.redis = RedisClient(await redis_pool())
     app.state.http_client = AiohttpClient()
-    print("FastAPI startup event handler executed.")
 
 
 @app.on_event("shutdown")
 async def on_shutdown():
     log.debug("Executing FastAPI shutdown event handler.")
     # Gracefully close utilities.
-    if config.DB.REDIS:
-        await app.state.redis.close()
+    await app.state.redis.close()
     await app.state.http_client.close_session()
 
 
@@ -142,6 +105,6 @@ log.debug("Registering exception handlers.")
 app.add_exception_handler(APIError, handle_api_error)
 app.add_exception_handler(404, handle_404_error)
 app.add_exception_handler(ValidationError, handle_pydantic_error)
-app.add_exception_handler(RequestValidationError, handle_pydantic_error) # todo: dont work
+app.add_exception_handler(RequestValidationError, handle_pydantic_error)  # todo: dont work
 log.debug("Registering middleware.")
 app.add_middleware(JWTMiddleware)

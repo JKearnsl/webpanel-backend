@@ -1,7 +1,7 @@
 from functools import wraps
+from typing import Union
 
 from src.exceptions import AccessDenied
-from src.models.state import UserStates
 from src.models.role import UserRole
 
 
@@ -16,10 +16,7 @@ def int_from_bytes(xbytes: bytes) -> int:
 def auth(
         is_authenticated: bool = True,
         *,
-        is_admin: bool = True,
-        is_moderator: bool = True,
-        is_user: bool = True,
-        state: UserStates = UserStates.ACTIVE,
+        roles: Union[list[UserRole], UserRole] = None,
 ):
     """
     Authenticate user decorator for ApplicationService
@@ -27,12 +24,14 @@ def auth(
     It is necessary that the class of the method being decorated has a field '_current_user'
 
     :param is_authenticated: is user authenticated
-    :param is_admin: is user admin
-    :param is_moderator: is user moderator
-    :param is_user: is user user
-    :param state: user state
+    :param roles: user role
     :return: decorator
     """
+
+    if roles is None:
+        roles = [role for role in UserRole]
+    if not isinstance(roles, list):
+        roles = list().append(roles)
 
     def decorator(func):
         @wraps(func)
@@ -48,18 +47,7 @@ def auth(
             if is_authenticated and current_user.is_authenticated is False:
                 raise AccessDenied('User is not authenticated')
 
-            if current_user.state != state:
-                raise AccessDenied('User has no access')
-
-            inc = set()
-            if is_admin:
-                inc.add(UserRole.ADMINISTRATOR)
-            if is_moderator:
-                inc.add(UserRole.MODERATOR)
-            if is_user:
-                inc.add(UserRole.USER)
-
-            if current_user.role not in inc:
+            if current_user.role not in roles:
                 raise AccessDenied('User has no access')
 
             return await func(*args, **kwargs)

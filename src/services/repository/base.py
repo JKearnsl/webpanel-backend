@@ -71,4 +71,4 @@ class BaseRepository(Generic[T]):
         :param kwargs:
         :return:
         """
-        return (await self._conn.execute(select(func.count()).where(**kwargs))).scalar()
+        return (await self._conn.execute(select(func.count(self.table.id)))).scalar()

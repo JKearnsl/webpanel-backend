@@ -1,6 +1,7 @@
 from src.models import tables
 from . import repository
 from . import auth
+from .initial import InitialApplicationService
 from .user import UserApplicationService
 
 
@@ -32,3 +33,7 @@ class ServiceFactory:
             current_user=self._current_user,
             debug=self._debug
         )
+
+    @property
+    def initial(self) -> InitialApplicationService:
+        return InitialApplicationService(self._repo.user)

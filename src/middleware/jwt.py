@@ -5,7 +5,6 @@ from fastapi.requests import Request
 from starlette.middleware.exceptions import ExceptionMiddleware
 
 from src.models.role import UserRole
-from src.models.state import UserStates
 from src.models import schemas
 from src.services.auth import JWTManager
 from src.services.auth import SessionManager
@@ -54,8 +53,7 @@ class JWTMiddleware(BaseHTTPMiddleware):
                 new_tokens = jwt.generate_tokens(
                     id=user.id,
                     username=user.username,
-                    role_value=user.role.value,
-                    state_value=user.state.value
+                    role_value=user.role.value
                 )
                 # Для бесшовного обновления токенов:
                 request.cookies["access_token"] = new_tokens.access_token
@@ -84,11 +82,10 @@ class JWTMiddleware(BaseHTTPMiddleware):
 
 
 class AuthenticatedUser(BaseUser):
-    def __init__(self, id: int, username: str, role_value: int, state_value: int, **kwargs):
+    def __init__(self, id: int, username: str, role_value: int, **kwargs):
         self._id = id
         self._username = username
         self._role_value = role_value
-        self._state_value = state_value
 
     @property
     def is_authenticated(self) -> bool:
@@ -113,10 +110,6 @@ class AuthenticatedUser(BaseUser):
     @property
     def role(self) -> UserRole:
         return UserRole(self._role_value)
-
-    @property
-    def state(self) -> UserStates:
-        return UserStates(self._state_value)
 
     def __eq__(self, other):
         return isinstance(other, AuthenticatedUser) and self._id == other.id

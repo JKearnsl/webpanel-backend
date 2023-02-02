@@ -4,7 +4,6 @@ from typing import Optional
 from pydantic import BaseModel, validator, ValidationError
 
 from src.models.role import UserRole
-from src.models.state import UserStates
 from src.utils import validators
 
 
@@ -16,7 +15,6 @@ class User(BaseModel):
     username: str
     email: str
     role: UserRole
-    state: UserStates
     create_at: datetime
     update_at: Optional[datetime]
 
@@ -28,6 +26,7 @@ class UserSignUp(BaseModel):
     username: str
     email: str
     password: str
+    role: UserRole
 
     @validator('username')
     def username_len(cls, value):

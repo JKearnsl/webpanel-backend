@@ -10,5 +10,4 @@ class TokenPayload(BaseModel):
     id: int
     username: str
     role_value: int
-    state_value: int
     exp: int
