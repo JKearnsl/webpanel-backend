@@ -1,6 +1,7 @@
 from src.models import tables
 from . import repository
 from . import auth
+from .info import InfoApplicationService
 from .initial import InitialApplicationService
 from .user import UserApplicationService
 
@@ -37,3 +38,7 @@ class ServiceFactory:
     @property
     def initial(self) -> InitialApplicationService:
         return InitialApplicationService(self._repo.user)
+
+    @property
+    def info(self) -> InfoApplicationService:
+        return InfoApplicationService(config=self._config, current_user=self._current_user)

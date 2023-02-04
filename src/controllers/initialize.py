@@ -1,14 +1,11 @@
 from fastapi import APIRouter, Depends
-from fastapi.requests import Request
-from fastapi.responses import Response
 from fastapi import status as http_status
 
 from src.dependencies.services import get_services
 from src.models import schemas
 from src.services import ServiceFactory
-from src.views import UserBigResponse
 
-router = APIRouter()  # todo: move to app.py
+router = APIRouter()
 
 
 @router.put("/create_start_user", status_code=http_status.HTTP_201_CREATED)

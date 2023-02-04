@@ -4,27 +4,10 @@ from abc import ABC, abstractmethod
 from typing import Optional, Union, IO
 
 
-@unique
-class ContentType(Enum):
-    """
-    Типы контента
-    """
-    IMAGE_JPEG = "image/jpeg"
-    IMAGE_PNG = "image/png"
-    IMAGE_GIF = "image/gif"
-    IMAGE_BMP = "image/bmp"
-    # TODO: добавить остальные типы/доработать
-
-    @classmethod
-    def has_value(cls, value):
-        return value in cls._value2member_map_
-
-
 @dataclasses.dataclass
 class File:
-    id: str
-    name: str
-    content_type: ContentType
+    filename: str
+    content_type: str
     size: Optional[int]
     bytes: Optional[bytes]
     owner_id: int
@@ -42,31 +25,81 @@ class AbstractStorage(ABC):
         pass
 
     @abstractmethod
-    async def get(self, file_id: str) -> Optional[File]:
+    async def get(self, path: str) -> Optional[File]:
         """
         Получить файл из хранилища
-        :param file_id:
+        :param path:
         :return:
         """
         pass
 
     @abstractmethod
-    async def save(self, name: str, content_type: ContentType, file: Union[bytes, IO], owner_id: int) -> str:
+    async def save(self, path: str, file: Union[bytes, IO]) -> str:
         """
         Сохранить файл в хранилище
-        :param owner_id:
+        :param path:
         :param file:
-        :param content_type: тип файла
-        :param name: имя файла
-        :return: file_id сохраненного файла
         """
         pass
 
     @abstractmethod
-    async def delete(self, file_id: int) -> None:
+    async def delete(self, path: str) -> None:
         """
         Удалить файл из хранилища
-        :param file_id:
+        :param path:
         :return:
+        """
+        pass
+
+    @abstractmethod
+    async def get_meta(self, path: str):
+        """
+        Получить мета-информацию о файле
+        :param path:
+        """
+        pass
+
+    @abstractmethod
+    async def rename(self, path: str, new_filename: str):
+        """
+        Переименовать файл
+        :param path:
+        :param new_filename:
+        """
+        pass
+
+    @abstractmethod
+    async def copy(self, path: str, new_path: str):
+        """
+        Копировать файл
+        :param path:
+        :param new_path:
+        """
+        pass
+
+    @abstractmethod
+    async def move(self, path: str, new_path: str):
+        """
+        Переместить файл
+        :param path:
+        :param new_path:
+        """
+        pass
+
+    @abstractmethod
+    async def exists(self, path: str) -> bool:
+        """
+        Проверить существование файла
+        :param path:
+        :return:
+        """
+        pass
+
+    @abstractmethod
+    async def unzip(self, path: str, destination: str):
+        """
+        Распаковать архив
+        :param path:
+        :param destination:
         """
         pass
