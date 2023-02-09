@@ -1,8 +1,13 @@
 from fastapi.requests import Request
+from starlette.websockets import WebSocket
 
 from src.services.repository import RepoFactory
 
 
-async def get_repos(request: Request) -> RepoFactory:
-    async with request.app.state.db_session() as session:
-        yield RepoFactory(session, debug=request.app.state.config.DEBUG)
+async def get_repos(request: Request = None, websocket: WebSocket = None) -> RepoFactory:
+    if request:
+        app = request.app
+    else:
+        app = websocket.app
+    async with app.state.db_session() as session:
+        yield RepoFactory(session, debug=app.state.config.DEBUG)

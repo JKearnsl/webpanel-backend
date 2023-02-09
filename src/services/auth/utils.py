@@ -39,6 +39,9 @@ def auth(
 
             service_class: object = args[0]
             current_user = service_class.__getattribute__('_current_user')
+            if not current_user:
+                raise ValueError('AuthMiddleware not found')
+
             if not is_authenticated:
                 if current_user.is_authenticated:
                     raise AccessDenied('User is authenticated')

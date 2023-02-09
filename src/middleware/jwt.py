@@ -1,5 +1,6 @@
 from starlette.authentication import AuthCredentials, UnauthenticatedUser, BaseUser
 from starlette.middleware.base import BaseHTTPMiddleware
+from fastapi.middleware.wsgi import WSGIMiddleware
 
 from fastapi.requests import Request
 from starlette.middleware.exceptions import ExceptionMiddleware

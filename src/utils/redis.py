@@ -1,5 +1,6 @@
 """Redis client class utility."""
 import logging
+from typing import Any, AsyncIterator
 
 import redis.asyncio as redis
 from redis.exceptions import RedisError
@@ -69,6 +70,16 @@ class RedisClient:
                 exc_info=(type(ex), ex, ex.__traceback__),
             )
             raise ex
+
+    async def find_keys(self, key_mask: str) -> AsyncIterator[Any]:
+        """
+        Поиск ключей по маске
+        Args:
+            key_mask: Маска ключа
+        Returns:
+            Список ключей
+        """
+        return await self.redis_client.scan_iter(key_mask)
 
     async def rpush(self, key, value):
         """Выполнить команду Redis RPUSH.

@@ -43,3 +43,11 @@ You can download the consul binary from [here](https://www.consul.io/downloads.h
 ### Environment Variables
 
 ...
+
+
+### Testing
+
+
+### Server requirements
+ - Python 3.11
+ - lsblk - utility

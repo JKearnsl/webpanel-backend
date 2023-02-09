@@ -14,7 +14,10 @@ from src.config import load_ini_config
 from src.exceptions import APIError, handle_api_error, handle_404_error, handle_pydantic_error
 
 from src.router import reg_root_api_router
+from src.services.info import stat_worker
 from src.utils import RedisClient, AiohttpClient
+from src.utils.bgmanager import BGManager
+from src.utils.wsmanager import WSConnectionManager
 
 config = load_ini_config('./config.ini')
 log = logging.getLogger(__name__)
@@ -56,12 +59,25 @@ async def redis_pool(db: int = 0):
     )
 
 
+async def init_background_manager():
+    app.state.background_manager = BGManager()
+    app.state.background_manager.add_job(
+        stat_worker, 'interval', seconds=3, args=(app,)
+    )
+    app.state.background_manager.start()
+
+
 @app.on_event("startup")
 async def on_startup():
     log.debug("Executing FastAPI startup event handler.")
-    await init_sqlite_db()
+    # Initialize utilities.
+    app.state.notifier_ws = WSConnectionManager()
+    app.state.stats_ws = WSConnectionManager()
     app.state.redis = RedisClient(await redis_pool())
     app.state.http_client = AiohttpClient()
+
+    await init_sqlite_db()
+    await init_background_manager()
 
 
 @app.on_event("shutdown")
