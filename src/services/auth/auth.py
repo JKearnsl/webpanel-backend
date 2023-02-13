@@ -7,9 +7,11 @@ from src.models import schemas
 from src.models.role import UserRole
 from src.services.repository import UserRepo
 from . import JWTManager, SessionManager
-from .utils import auth
+from .utils import filters
 from .password import verify_password, get_hashed_password
 
+# todo: не учитывать регистр пользователя при авторизации
+# todo: перенести реализацию в __init__.py
 
 class AuthApplicationService:
     def __init__(
@@ -26,7 +28,7 @@ class AuthApplicationService:
         self._current_user = current_user
         self._debug = debug
 
-    @auth(is_authenticated=True, roles=[UserRole.ADMIN])
+    @filters(roles=[UserRole.ADMIN])
     async def create_user(self, user: schemas.UserSignUp) -> schemas.User:
         """
         Создание нового пользователя
@@ -49,7 +51,7 @@ class AuthApplicationService:
 
         return await self._user_repo.create(**user.dict(exclude={"password"}), hashed_password=hashed_password)
 
-    @auth(is_authenticated=False)
+    @filters(roles=[UserRole.GUEST])
     async def authenticate(self, username: str, password: str, response: Response) -> schemas.User:
         """
         Аутентификация пользователя
@@ -78,7 +80,7 @@ class AuthApplicationService:
         await self._session.set_session_id(response, tokens.refresh_token)
         return user
 
-    @auth(is_authenticated=True)
+    @filters(roles=[UserRole.ADMIN, UserRole.USER])
     async def logout(self, request: Request, response: Response) -> None:
         """
         Выход пользователя
@@ -91,7 +93,7 @@ class AuthApplicationService:
         if session_id:
             await self._session.delete_session_id(session_id, response)
 
-    @auth(is_authenticated=True, roles=[UserRole.ADMIN, UserRole.USER])
+    @filters(roles=[UserRole.ADMIN, UserRole.USER])
     async def refresh_tokens(self, request: Request, response: Response) -> None:
         """
         Обновление токенов
