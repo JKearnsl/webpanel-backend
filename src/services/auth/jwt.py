@@ -3,6 +3,7 @@ from typing import Optional
 
 import jwt
 from fastapi import Response, Request
+from starlette.websockets import WebSocket
 
 from src.config import Config
 from src.models import schemas
@@ -10,7 +11,7 @@ from src.models import schemas
 
 class JWTManager:
     ALGORITHM = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES = 30  # 30 minutes
+    ACCESS_TOKEN_EXPIRE_MINUTES = 15  # 15 minutes
     REFRESH_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days
 
     COOKIE_EXP = 31536000
@@ -133,14 +134,14 @@ class JWTManager:
             domain=self.COOKIE_DOMAIN
         )
 
-    def get_jwt_cookie(self, request: Request) -> Optional[schemas.Tokens]:
+    def get_jwt_cookie(self, req_obj: Request | WebSocket) -> Optional[schemas.Tokens]:
         """
         Получает из кук access и refresh-токены
-        :param request:
+        :param req_obj:
         :return: None или Tokens
         """
-        access_token = request.cookies.get(self.COOKIE_ACCESS_KEY)
-        refresh_token = request.cookies.get(self.COOKIE_REFRESH_KEY)
+        access_token = req_obj.cookies.get(self.COOKIE_ACCESS_KEY)
+        refresh_token = req_obj.cookies.get(self.COOKIE_REFRESH_KEY)
         if not access_token or not refresh_token:
             return None
         return schemas.Tokens(access_token=access_token, refresh_token=refresh_token)
@@ -156,7 +157,7 @@ class JWTManager:
 
     def _is_valid_jwt(self, token: str, secret_key: str) -> bool:
         try:
-            self._decode_jwt(token, secret_key)
+            jwt.decode(token, secret_key, algorithms=self.ALGORITHM)
         except (jwt.exceptions.InvalidTokenError, jwt.exceptions.ExpiredSignatureError, jwt.exceptions.DecodeError):
             return False
         return True
@@ -177,4 +178,9 @@ class JWTManager:
         param: secret_key: секретный ключ
         :return: payload
         """
-        return schemas.TokenPayload.parse_obj(jwt.decode(token, secret_key, algorithms=self.ALGORITHM))
+        return schemas.TokenPayload.parse_obj(jwt.decode(
+            token,
+            secret_key,
+            algorithms=self.ALGORITHM,
+            options={"verify_signature": False}
+        ))

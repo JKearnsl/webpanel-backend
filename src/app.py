@@ -9,15 +9,15 @@ from pydantic import ValidationError
 
 from src.models import tables
 from src.db import create_sqlite_async_session
-from src.middleware import JWTMiddleware
+from src.middleware import JWTMiddlewareHTTP, JWTMiddlewareWS
 from src.config import load_ini_config
 from src.exceptions import APIError, handle_api_error, handle_404_error, handle_pydantic_error
 
 from src.router import reg_root_api_router
-from src.services.info import stat_worker
+from src.services.stats import stat_worker
 from src.utils import RedisClient, AiohttpClient
 from src.utils.bgmanager import BGManager
-from src.utils.wsmanager import WSConnectionManager
+from src.utils.wsmanager import WSConnectionManager, WSJWTConnectionManager
 
 config = load_ini_config('./config.ini')
 log = logging.getLogger(__name__)
@@ -72,7 +72,7 @@ async def on_startup():
     log.debug("Executing FastAPI startup event handler.")
     # Initialize utilities.
     app.state.notifier_ws = WSConnectionManager()
-    app.state.stats_ws = WSConnectionManager()
+    app.state.stats_ws = WSJWTConnectionManager()
     app.state.redis = RedisClient(await redis_pool())
     app.state.http_client = AiohttpClient()
 
@@ -123,4 +123,5 @@ app.add_exception_handler(404, handle_404_error)
 app.add_exception_handler(ValidationError, handle_pydantic_error)
 app.add_exception_handler(RequestValidationError, handle_pydantic_error)  # todo: dont work
 log.debug("Registering middleware.")
-app.add_middleware(JWTMiddleware)
+app.add_middleware(JWTMiddlewareHTTP)
+app.add_middleware(JWTMiddlewareWS)

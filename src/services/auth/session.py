@@ -2,6 +2,8 @@ import uuid
 from typing import Optional
 
 from fastapi import Request, Response
+from starlette.websockets import WebSocket
+
 from src.utils import RedisClient
 
 
@@ -17,15 +19,15 @@ class SessionManager:
         self._config = config
         self._debug = debug
 
-    def get_session_id(self, request: Request) -> Optional[int]:
+    def get_session_id(self, req_obj: Request | WebSocket) -> Optional[int]:
         """
         Получить идентификатор сессии из куков
 
-        :param request:
+        :param req_obj:
         :return: session_id
         """
 
-        str_cookie_session_id = request.cookies.get(self.COOKIE_SESSION_KEY)
+        str_cookie_session_id = req_obj.cookies.get(self.COOKIE_SESSION_KEY)
         try:
             cookie_session_id = int(str_cookie_session_id)
         except (ValueError, TypeError):
@@ -76,7 +78,7 @@ class SessionManager:
             path=self.COOKIE_PATH
         )
 
-    async def is_valid_session(self, session_id: int, cookie_refresh_token: str) -> bool:
+    async def is_valid_session(self, session_id: int | str, cookie_refresh_token: str) -> bool:
         """
         Проверяет валидность сессии
         :param session_id:

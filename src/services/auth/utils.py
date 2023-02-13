@@ -1,3 +1,4 @@
+import time
 from functools import wraps
 from typing import Union
 
@@ -13,17 +14,14 @@ def int_from_bytes(xbytes: bytes) -> int:
     return int.from_bytes(xbytes, 'big')
 
 
-def auth(
-        is_authenticated: bool = True,
-        *,
+def filters(
         roles: Union[list[UserRole], UserRole] = None,
 ):
     """
-    Authenticate user decorator for ApplicationService
+    Role Filter decorator for ApplicationServices
 
     It is necessary that the class of the method being decorated has a field '_current_user'
 
-    :param is_authenticated: is user authenticated
     :param roles: user role
     :return: decorator
     """
@@ -42,18 +40,17 @@ def auth(
             if not current_user:
                 raise ValueError('AuthMiddleware not found')
 
-            if not is_authenticated:
-                if current_user.is_authenticated:
-                    raise AccessDenied('User is authenticated')
+            # Access exp check
+            if current_user.role == UserRole.GUEST and current_user.access_exp:
+                if current_user.access_exp < time.time():
+                    raise AccessDenied('Access token expired')
+                # TODO: подумать о ситуациях, когда пользователь может подменить токены: refresh, access
+                raise RuntimeError('Access token dont expired, but user role=GUEST; access_exp not None')
+
+            if current_user.role in roles:
                 return await func(*args, **kwargs)
-
-            if is_authenticated and current_user.is_authenticated is False:
-                raise AccessDenied('User is not authenticated')
-
-            if current_user.role not in roles:
+            else:
                 raise AccessDenied('User has no access')
-
-            return await func(*args, **kwargs)
 
         return wrapper
 

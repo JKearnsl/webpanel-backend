@@ -1,1 +1,2 @@
-from .jwt import JWTMiddleware
+from .jwt import JWTMiddlewareHTTP
+from .jwt import JWTMiddlewareWS
