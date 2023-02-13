@@ -149,15 +149,12 @@ class ROMStat(BaseModel):
 
 class LANStatInterface(BaseModel):
     title: Optional[str]
-    ip: Optional[str]
     bytes_sent: Optional[int]
     bytes_recv: Optional[int]
-    current_speed_up: Optional[float]
-    current_speed_down: Optional[float]
 
 
 class LANStat(BaseModel):
-    adapters: Optional[list[LANStatInterface]]
+    interfaces: Optional[list[LANStatInterface]]
 
 
 class SystemStat(BaseModel):

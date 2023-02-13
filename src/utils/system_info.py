@@ -128,7 +128,6 @@ async def async_ping(host: str, interface: str, timeout: int) -> schemas.LANNetw
         stderr=asyncio.subprocess.PIPE)
 
     stdout, stderr = await proc.communicate()
-
     if stdout:
         result = re.findall(r"(\d+)% packet loss", stdout.decode())
 
@@ -247,15 +246,14 @@ def get_rom_stat() -> schemas.ROMStat:
 def get_lan_stat() -> schemas.LANStat:
     interfaces = []
     for interface_name, interface_addresses in psutil.net_if_addrs().items():
-        for address in interface_addresses:
-            if address.family == AddressFamily.AF_INET:
-                interfaces.append(
-                    schemas.LANStatInterface(
-                        title=interface_name,
-                        ip=address.address,
-                        bytes_sent=psutil.net_io_counters(pernic=True)[interface_name].bytes_sent,
-                        bytes_recv=psutil.net_io_counters(pernic=True)[interface_name].bytes_recv,
-                        current_speed_up=psutil.net_if_stats()[interface_name].speed,
-                    )
-                )
-    return schemas.LANStat(interfaces=interfaces)  # todo
+        if interface_name == 'lo':
+            continue
+
+        interfaces.append(
+            schemas.LANStatInterface(
+                title=interface_name,
+                bytes_sent=psutil.net_io_counters(pernic=True)[interface_name].bytes_sent,
+                bytes_recv=psutil.net_io_counters(pernic=True)[interface_name].bytes_recv,
+            )
+        )
+    return schemas.LANStat(interfaces=interfaces)
