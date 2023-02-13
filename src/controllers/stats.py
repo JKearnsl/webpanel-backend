@@ -6,7 +6,7 @@ from fastapi.responses import HTMLResponse  # remove
 
 from src.dependencies.services import get_services
 from src.services import ServiceFactory
-from src.utils.wsmanager import WSConnectionManager
+
 
 router = APIRouter()
 
@@ -24,6 +24,7 @@ html = """
     </head>
     <body>
         <h1>WebSocket Chat</h1>
+        <button onclick="connect()">Connect to WS</button>
         <form action="" onsubmit="sendMessage(event)">
             <input type="text" id="messageText" autocomplete="off"/>
             <button>Send</button>
@@ -31,16 +32,29 @@ html = """
         <ul id='messages'>
         </ul>
         <script>
-            var ws = new WebSocket("ws://127.0.0.1:8000/api/v1/stats/ws");
-            ws.onmessage = function(event) {
-                var messages = document.getElementById('messages')
-                var message = document.createElement('li')
-                var content = document.createTextNode(event.data)
-                message.appendChild(content)
-                messages.appendChild(message)
-            };
+            let ws;
+            function connect(){
+                ws = new WebSocket("ws://127.0.0.1:8000/api/v1/stats/ws");
+                ws.onmessage = async function(event) {
+                    const messages = document.getElementById('messages')
+                    const message = document.createElement('li')
+                    
+                    const str_data = await event.data.text()
+                    const json_data = JSON.parse(str_data)
+                    
+                    const content = document.createTextNode(str_data);
+                    message.appendChild(content)
+                    messages.appendChild(message)
+                };
+                ws.onclose = function (event) {
+                    console.log('Socket is closed.', event.reason, event.code);
+                    alert(event.code + ' ' + event.reason);
+                };
+            }
+            
+            
             function sendMessage(event) {
-                var input = document.getElementById("messageText")
+                const input = document.getElementById("messageText")
                 ws.send(input.value)
                 input.value = ''
                 event.preventDefault()
