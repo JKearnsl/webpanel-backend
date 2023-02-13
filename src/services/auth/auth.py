@@ -10,7 +10,7 @@ from . import JWTManager, SessionManager
 from .utils import filters
 from .password import verify_password, get_hashed_password
 
-# todo: не учитывать регистр пользователя при авторизации
+
 # todo: перенести реализацию в __init__.py
 
 class AuthApplicationService:
@@ -67,7 +67,7 @@ class AuthApplicationService:
         :raise AccessDenied if user is banned
         """
 
-        user: tables.User = await self._user_repo.get(username=username)
+        user: tables.User = await self._user_repo.get_by_username_insensitive(username=username)
         if not user:
             raise NotFound("User not found")
         if not verify_password(password, user.hashed_password):
